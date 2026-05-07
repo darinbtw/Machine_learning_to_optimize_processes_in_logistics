@@ -6,8 +6,7 @@
 <title>RouteAI — Оптимизация маршрутов доставки</title>
 
 <!-- Яндекс Карты API — вставьте ваш ключ -->
-<script src="https://api-maps.yandex.ru/2.1/?apikey=13291d55-1a3e-4075-9f9e-38199fe5ccbb&lang=ru_RU" type="text/javascript"></script>
-
+<script src="https://api-maps.yandex.ru/2.1/?apikey=13291d55-1a3e-4075-9f9e-38199fe5ccbb&lang=ru_RU&load=package.full" type="text/javascript"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Inter:wght@300;400;500&display=swap');
 
@@ -989,27 +988,42 @@ function clearRoute() {
 function drawRoute(route) {
   if (!yaMap) return;
   clearRoute();
-  redrawAllMarkers(); // обновить маркеры без нумерации маршрута
+  redrawAllMarkers();
 
-  // Координаты маршрута
-  const coords = route.map(i => [points[i].lat, points[i].lng]);
-  coords.push(coords[0]); // замкнуть
-
-  // Цвета по алгоритму
   const colors = { random:'#ef4444', nearest_neighbor:'#3d7fff', nn_2opt:'#22c55e' };
   const color  = colors[currentAlgo] || '#3d7fff';
 
-  // Полилиния
-  routePolyline = new ymaps.Polyline(coords, {
-    balloonContent: 'Маршрут доставки'
-  }, {
-    strokeColor: color,
-    strokeWidth: 4,
-    strokeOpacity: 0.85
-  });
-  yaMap.geoObjects.add(routePolyline);
+  const waypoints = route.map(i => points[i]);
 
-  // Пронумерованные метки с порядком объезда
+  const multiRoute = new ymaps.multiRouter.MultiRoute(
+    {
+      referencePoints: waypoints.map(p => [p.lat, p.lng]),
+      params: { routingMode: 'auto' }
+    },
+    {
+      routeActiveStrokeColor: color,
+      routeActiveStrokeWidth: 5,
+      routeStrokeColor: color,
+      boundsAutoApply: true,
+      wayPointVisible: false,
+      routeActiveMarkerVisible: false
+    }
+  );
+
+  // Реальное расстояние по дорогам — ОТДЕЛЬНО после закрытия конструктора
+  multiRoute.model.events.add('requestsuccess', function() {
+    const activeRoute = multiRoute.getActiveRoute();
+    if (activeRoute) {
+      const realDist = (activeRoute.properties.get('distance').value / 1000).toFixed(2);
+      document.getElementById('stat-dist').textContent = realDist;
+      document.getElementById('ov-dist').textContent   = realDist + ' км';
+    }
+  });
+
+  yaMap.geoObjects.add(multiRoute);
+  routeMarkers.push(multiRoute);
+
+  // Пронумерованные метки
   route.forEach((ptIdx, orderIdx) => {
     const p = points[ptIdx];
     const isDepot = ptIdx === 0;
@@ -1018,18 +1032,33 @@ function drawRoute(route) {
       balloonContent: `<b>${orderIdx+1}. ${p.label}</b>`,
       hintContent: `${orderIdx+1}. ${p.label}`
     }, {
-      preset: isDepot
-        ? 'islands#redStretchyIcon'
-        : 'islands#blueStretchyIcon',
+      preset: isDepot ? 'islands#redStretchyIcon' : 'islands#blueStretchyIcon',
+      iconColor: isDepot ? '#ff6b35' : color
+    });
+    yaMap.geoObjects.add(mark);
+    routeMarkers.push(mark);
+  });
+}
+
+  yaMap.geoObjects.add(multiRoute);
+  routeMarkers.push(multiRoute);
+
+  // Добавляем свои пронумерованные метки
+  route.forEach((ptIdx, orderIdx) => {
+    const p = points[ptIdx];
+    const isDepot = ptIdx === 0;
+    const mark = new ymaps.Placemark([p.lat, p.lng], {
+      iconContent: isDepot ? 'D' : String(orderIdx + 1),
+      balloonContent: `<b>${orderIdx+1}. ${p.label}</b>`,
+      hintContent: `${orderIdx+1}. ${p.label}`
+    }, {
+      preset: isDepot ? 'islands#redStretchyIcon' : 'islands#blueStretchyIcon',
       iconColor: isDepot ? '#ff6b35' : color
     });
     yaMap.geoObjects.add(mark);
     routeMarkers.push(mark);
   });
 
-  // Подогнать карту под маршрут
-  yaMap.setBounds(yaMap.geoObjects.getBounds(), { checkZoomRange: true, margin: 40 });
-}
 
 // ═══════════════════════════════════════════════════════════════
 //  ЭКСПОРТ JSON
