@@ -523,10 +523,10 @@ header {
 <!-- ── HEADER ──────────────────────────────────────────────────── -->
 <header>
   <span class="logo-icon">🚚</span>
-  <span class="logo">RouteAI</span>
+  <span class="logo">Навигатор AI</span>
   <div class="header-divider"></div>
-  <span class="header-badge">Алгоритм Ближайшего соседа</span>
-  <span class="header-badge">Дипломный проект</span>
+  <!-- <span class="header-badge">Алгоритм Ближайшего соседа</span>
+  <span class="header-badge">Дипломный проект</span> -->
   <div class="header-spacer"></div>
   <!-- <span class="api-notice">⚠️ Вставьте API-ключ Яндекс Карт в &lt;script src=...&gt;</span> -->
 </header>
@@ -669,7 +669,7 @@ let geoObjects = [];
 // (Сан-Паулу → пересчитаны в условный российский город для демонстрации)
 // Реально используйте route_data.json, экспортированный из notebook
 const DEMO_POINTS = [
-  {label:'🏭 Склад (депо)',   lat: 55.7558, lng: 37.6173},
+  {label:'Склад',   lat: 55.7558, lng: 37.6173},
   {label:'Клиент 1',          lat: 55.7751, lng: 37.5996},
   {label:'Клиент 2',          lat: 55.7312, lng: 37.6240},
   {label:'Клиент 3',          lat: 55.7680, lng: 37.6820},
@@ -702,7 +702,7 @@ ymaps.ready(function() {
   yaMap.events.add('click', function(e) {
     const coords = e.get('coords');
     const n = points.length;
-    const label = n === 0 ? '🏭 Склад' : `Точка ${n}`;
+    const label = n === 0 ? 'Точка 1' : `Точка ${n}`;
     addPoint({ label, lat: coords[0], lng: coords[1] });
     showToast(`📍 ${label} добавлена`, 'info');
   });
