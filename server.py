@@ -17,5 +17,5 @@ with socketserver.TCPServer(("", PORT), handler) as httpd:
     print(f"Открываю браузер...")
     print(f"Для остановки нажмите Ctrl+C")
     
-    webbrowser.open(url)  # автоматически открывает браузер
+    # webbrowser.open(url)  # автоматически открывает браузер
     httpd.serve_forever()
